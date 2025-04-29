@@ -3,7 +3,7 @@
 Just a short script to make capturing the hardware hash from a usb drive a bit quicker.
 
 
-If it's a single disk system, from the OOBE you just need to press F10 to open command prompt and then type:
+If it's a single disk system, from the OOBE you just need to press SHIFT-F10 to open command prompt and then type:
 
 
 D:\a
