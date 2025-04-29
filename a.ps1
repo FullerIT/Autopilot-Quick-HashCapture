@@ -1,6 +1,6 @@
 <# a.ps1
 pellis@cmitsolutions.com
-2025-04-29-001
+2025-04-29-002
 
 When system returns gets to OOBE we want to be able to issue a quick F10 command prompt and then D:\a
 this runs the batch to start powershell unrestricted and executes the Get-WindowsAutopilotInfo.ps1 to capture the hardware hash
@@ -23,6 +23,7 @@ $tempCsvFile = "$PSScriptRoot\AutopilotHWID_$deviceName.csv"
 
 # Run the script to get Autopilot HWID info and save to the temporary CSV file
 .\Get-WindowsAutopilotInfo.ps1 -OutputFile $tempCsvFile
+Import-Csv -Path $tempCsvFile | Format-Table -AutoSize
 
 # Read the contents of the temporary CSV file
 $tempCsvContent = Get-Content -Path $tempCsvFile
@@ -37,3 +38,5 @@ if (Test-Path "$PSScriptRoot\AutopilotHWID.csv") {
     # If the main CSV file does not exist, create it with the contents of the temporary CSV file
     $tempCsvContent | Out-File -FilePath "$PSScriptRoot\AutopilotHWID.csv"
 }
+read-host -Prompt "Press enter to reboot, CTRL-C to abort"
+shutdown -r -t 2 -f
