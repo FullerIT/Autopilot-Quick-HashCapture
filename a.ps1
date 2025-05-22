@@ -1,6 +1,6 @@
 <# a.ps1
 pellis@cmitsolutions.com
-2025-04-29-002
+2025-05-22-001
 
 When system returns gets to OOBE we want to be able to issue a quick F10 command prompt and then D:\a
 this runs the batch to start powershell unrestricted and executes the Get-WindowsAutopilotInfo.ps1 to capture the hardware hash
@@ -16,13 +16,20 @@ In case of file corruption we also keep the individual files as well.
 
 # Set location to the script's directory
 Set-Location -Path $PSScriptRoot
+$scriptName = "Get-WindowsAutopilotInfo.ps1"
 
 # Generate a unique name for the temporary CSV file based on the device
-$deviceName = $env:COMPUTERNAME
-$tempCsvFile = "$PSScriptRoot\AutopilotHWID_$deviceName.csv"
+$serialno =  (Get-WmiObject -Class Win32_BIOS | Select-Object -Property SerialNumber).SerialNumber
+$tempCsvFile = "$PSScriptRoot\AutopilotHWID_$serialno.csv"
+
+# Check if the script is already available in the current session or path
+if (-not (Get-Command $scriptName -ErrorAction SilentlyContinue)) {
+    Write-Host "Script not found. Installing from PowerShell Gallery..."
+    Install-Script -Name Get-WindowsAutopilotInfo -Force -Scope CurrentUser
+}
 
 # Run the script to get Autopilot HWID info and save to the temporary CSV file
-.\Get-WindowsAutopilotInfo.ps1 -OutputFile $tempCsvFile
+Get-WindowsAutopilotInfo.ps1 -OutputFile $tempCsvFile
 Import-Csv -Path $tempCsvFile | Format-Table -AutoSize
 
 # Read the contents of the temporary CSV file
