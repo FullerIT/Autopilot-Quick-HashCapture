@@ -1,8 +1,8 @@
 <# a.ps1
 pellis@cmitsolutions.com
-2025-06-26-001
+2025-06-26-002
 
-Latest Notes: Added nuget provider check
+Latest Notes: Nested nuget check
 
 When system returns gets to OOBE we want to be able to issue a quick F10 command prompt and then D:\a
 this runs the batch to start powershell unrestricted and executes the Get-WindowsAutopilotInfo.ps1 to capture the hardware hash
@@ -24,15 +24,16 @@ $scriptName = "Get-WindowsAutopilotInfo.ps1"
 $serialno =  (Get-WmiObject -Class Win32_BIOS | Select-Object -Property SerialNumber).SerialNumber
 $tempCsvFile = "$PSScriptRoot\AutopilotHWID_$serialno.csv"
 
-# Ensure NuGet provider is installed without prompting
-if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-    Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
-}
-
-# Check if the script is already available in the current session or path
+# Check if the script exists
 if (-not (Get-Command $scriptName -ErrorAction SilentlyContinue)) {
-    Write-Host "Script not found. Installing from PowerShell Gallery..."
-    Install-Script -Name Get-WindowsAutopilotInfo -Force -Scope CurrentUser
+# Ensure NuGet provider is installed without prompting
+    if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+        Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+    }
+
+    # Install the script if it's not found
+    Write-Host "Script not found. Installing from PowerShell Gallery..."
+    Install-Script -Name Get-WindowsAutopilotInfo -Force -Scope CurrentUser
 }
 
 # Run the script to get Autopilot HWID info and save to the temporary CSV file
