@@ -1,8 +1,8 @@
 <# a.ps1
 pellis@cmitsolutions.com
-2025-06-26-002
+2025-06-27-002
 
-Latest Notes: Nested nuget check
+Latest Notes: Included check for file in script path, this is handy if you are working on offline systems.
 
 When system returns gets to OOBE we want to be able to issue a quick F10 command prompt and then D:\a
 this runs the batch to start powershell unrestricted and executes the Get-WindowsAutopilotInfo.ps1 to capture the hardware hash
@@ -24,20 +24,38 @@ $scriptName = "Get-WindowsAutopilotInfo.ps1"
 $serialno =  (Get-WmiObject -Class Win32_BIOS | Select-Object -Property SerialNumber).SerialNumber
 $tempCsvFile = "$PSScriptRoot\AutopilotHWID_$serialno.csv"
 
-# Check if the script exists
-if (-not (Get-Command $scriptName -ErrorAction SilentlyContinue)) {
-# Ensure NuGet provider is installed without prompting
-    if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-        Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
-    }
+# Define the full path to the script file based on the current script's directory
+$scriptPath = Join-Path -Path $PSScriptRoot -ChildPath $scriptName
 
-    # Install the script if it's not found
-    Write-Host "Script not found. Installing from PowerShell Gallery..."
-    Install-Script -Name Get-WindowsAutopilotInfo -Force -Scope CurrentUser
+
+# Skip the block if the script file exists
+if (-not (Test-Path $scriptPath)) {
+    # Check if the script exists as a command
+    if (-not (Get-Command $scriptName -ErrorAction SilentlyContinue)) {
+        # Ensure NuGet provider is installed without prompting
+        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+            Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+        }
+
+        # Install the script if it's not found
+        Write-Host "Script not found. Installing from PowerShell Gallery..."
+        Install-Script -Name Get-WindowsAutopilotInfo -Force -Scope CurrentUser
+    }
+} else {
+    Write-Host "Script file already exists at $scriptPath. Skipping installation block."
 }
 
+
 # Run the script to get Autopilot HWID info and save to the temporary CSV file
-Get-WindowsAutopilotInfo.ps1 -OutputFile $tempCsvFile
+& $scriptPath -OutputFile $tempCsvFile
+
+Write-Host "*********************************************************************************************************"
+Write-Host "If the script gave an error and no hash, citing Get-CimInstance : Access Denied and Unable to retrieve device hardware data, just run:"
+Write-Host "winrm qc"
+Write-Host "and click yes to the prompts and try again"
+Write-Host "If it still didn't work you may need a build update of Windows 11 or else capture this OOBE after a Reset PC"
+Write-Host "*********************************************************************************************************"
+
 Import-Csv -Path $tempCsvFile | Format-Table -AutoSize
 
 # Read the contents of the temporary CSV file
